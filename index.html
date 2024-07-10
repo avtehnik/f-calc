@@ -1,0 +1,147 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>battery-calc</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.0"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <style>
+        .source-code {
+            border: 1px gray solid;
+            padding: 10px;
+        }
+    </style>
+
+</head>
+<body>
+<div id="app">
+    <div>
+        <div style="padding: 50px">
+            <h2>a</h2>
+            <div>
+                channels <input type="number" v-model="startIndex">
+            </div>
+            <div>
+                channels <input type="number" v-model="channels"><br>
+                Start <input type="number" v-model="FStart">
+                Stop <input type="number" v-model="FStop"> {{FRes}} {{FRes2}}
+                <br>f base {{Fbase}}
+                <br>f bandwidth {{FRes}}
+                <br>channel width {{FRes2}}
+
+            </div>
+            <br>
+            <textarea @input="update" style="width: 400px;height: 200px" v-model="domains">
+
+
+            </textarea>
+            <br></br>
+
+            <h4>/src/lib/FHSS/FHSS.cpp</h4>
+            <pre class="source-code">
+const fhss_config_t domains[] = {
+<p v-for="domain in domainsList">    {"{{ domain.name }}", FREQ_HZ_TO_REG_VAL({{ domain.start
+    }}), FREQ_HZ_TO_REG_VAL({{ domain.stop }}),{{ domain.channels
+    }}}, //  {{ domain.start / 1000000}}-{{ domain.stop / 1000000}} bandwidth {{domain.bandwidth}}Mhz</p>};
+</pre>
+
+            <h4>/src/html/index.html</h4>
+            <pre class="source-code">
+<p v-for="domain in domainsList">&lt;option value=&#39;{{domain.index}}&#39;&gt;{{ domain.name }}&lt;/option&gt;</p>
+</pre>
+
+            <h4>/src/lib/OPTIONS/options.cpp</h4>
+            <pre class="source-code">
+<p v-for="domain in domainsList">    #elif defined(Regulatory_Domain_{{ domain.name }})
+    .domain = {{domain.index}},</p></pre>
+
+            <h4>/src/include/targets.h</h4>
+            <pre class="source-code">
+<p v-for="domain in domainsList">#undef Regulatory_Domain_{{ domain.name }}</p></pre>
+
+            <h4>/src/include/targets.h</h4>
+            <pre class="source-code">
+<p v-for="domain in domainsList">        defined(Regulatory_Domain_{{ domain.name }}) || \</p></pre>
+
+            <h4>/src/user_defines.txt</h4>
+            <pre class="source-code">
+-DMY_BINDING_PHRASE="ED"
+-DRegulatory_Domain_FCC_915
+-DAUTO_WIFI_ON_INTERVAL="60"
+-DLOCK_ON_FIRST_CONNECTION
+-DRegulatory_Domain_AU_915
+-DRegulatory_Domain_EU_868
+-DRegulatory_Domain_IN_866
+<p v-for="domain in domainsList">-DRegulatory_Domain_{{ domain.name }}</p></pre>
+
+
+        </div>
+    </div>
+</div>
+<script>
+
+    new Vue({
+        el: "#app",
+        data: {
+            domains: "",
+            FStart: 903500000,
+            FStop: 926900000,
+            startIndex: 0,
+            channels: 40,
+        },
+        beforeMount() {
+            this.domains = window.localStorage.hasOwnProperty('domains') ? window.localStorage['domains'] : "";
+        },
+        methods: {
+            update: function () {
+                window.localStorage['domains'] = this.domains;
+            },
+        },
+        computed: {
+            domainsList: function () {
+                let list = [];
+
+                this.domains.split('\n').forEach((domain, index) => {
+
+                    let parts = domain.split(' ');
+                    if (parts.length > 1) {
+                        let base = parseInt(parts[0]) * 1000000 || 0;
+                        let channels = parseInt(parts[1]) || 0;
+                        let channelWidth = parseFloat(parts[2]) || 0;
+                        // let channels = parts[3] || 0;
+
+                        let bandwidth = channelWidth * channels;
+                        let start = base - bandwidth / 2;
+                        let stop = start + bandwidth;
+
+                        // console.log(start / 1000000, stop / 1000000, (stop - start) / 1000000, bandwidth / 1000000);
+
+                        list.push({
+                            index: parseInt(this.startIndex) + index,
+                            name: "UA" + parts[0],
+                            start: start,
+                            stop: stop,
+                            channels: channels,
+                            bandwidth: bandwidth / 1000000
+                        })
+                    }
+                })
+
+                // window.localStorage['reserved'] = this.reserved;
+                // {{ domain.start }}{{ domain.stop }}{{ domain.channels }}
+
+                return list;
+            },
+            FRes: function () {
+                return (this.FStop - this.FStart) / 1000000;
+            },
+            Fbase: function () {
+                return ((this.FStop - this.FStart) / 2) + this.FStart;
+            },
+            FRes2: function () {
+                return (((this.FStop - this.FStart)) / this.channels);
+            },
+        }
+    });
+</script>
+</body>
+</html>
