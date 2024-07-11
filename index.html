@@ -17,9 +17,6 @@
     <div>
         <div style="padding: 50px">
             <div>
-                channel start index <input type="number" v-model="startIndex">
-            </div>
-            <div>
                 channels <input type="number" v-model="channels"><br>
                 Start <input type="number" v-model="FStart">
                 Stop <input type="number" v-model="FStop"> {{FRes}} {{FRes2}}
@@ -27,6 +24,9 @@
                 <br>f bandwidth {{FRes}}
                 <br>channel width {{FRes2}}
 
+            </div>
+            <div>
+                channel start index <input type="number" v-model="startIndex">
             </div>
             <br>
             <textarea @input="update" style="width: 400px;height: 200px" v-model="domains">
